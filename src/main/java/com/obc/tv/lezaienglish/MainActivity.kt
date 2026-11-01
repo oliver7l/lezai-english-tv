@@ -146,7 +146,6 @@ class MainActivity : Activity() {
 
     private fun startVideo() {
         status("正在加载动画 …")
-        video.setVideoURI(Uri.parse("$server/video/$videoFile"))
         video.setOnPreparedListener { mp ->
             statusView.visibility = View.GONE
             mp.isLooping = false
@@ -154,6 +153,7 @@ class MainActivity : Activity() {
             handler.removeCallbacks(tick)
             handler.post(tick)
         }
+        video.setVideoURI(Uri.parse("$server/video/$videoFile"))
     }
 
     /** 轮询播放进度：到点就暂停出题。 */
@@ -245,7 +245,11 @@ class MainActivity : Activity() {
         nextQuiz = curQuiz + 1
         curQuiz = -1
         locked = false
-        if (!finished) video.start()
+        if (!finished) {
+            video.start()
+            handler.removeCallbacks(tick)   // 可能被 onStop 摘掉过，重新挂上
+            handler.post(tick)
+        }
     }
 
     private fun showDone() {
@@ -344,6 +348,20 @@ class MainActivity : Activity() {
             return conn.inputStream.bufferedReader().use { it.readText() }
         } finally {
             conn.disconnect()
+        }
+    }
+
+    /** 从后台回来：若不在答题中、也没看完，就续播并把进度轮询重新挂上。 */
+    override fun onResume() {
+        super.onResume()
+        if (finished) return
+        if (quizLayer.visibility == View.VISIBLE) return   // 答题中/看完页，保持不动
+        if (quizzes != null && video.currentPosition > 0 && !video.isPlaying) {
+            try { video.start() } catch (_: Exception) {}
+        }
+        if (quizzes != null) {
+            handler.removeCallbacks(tick)
+            handler.post(tick)
         }
     }
 
