@@ -1,0 +1,54 @@
+// 乐仔学英语 —— 单模块 Android TV 工程
+// 依赖仅 Android Gradle Plugin + Kotlin，零第三方库；CI 快且稳。
+buildscript {
+    ext.kotlin_version = "1.9.24"
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.5.2"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+apply plugin: "com.android.application"
+apply plugin: "kotlin-android"
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+android {
+    namespace "com.obc.tv.lezaienglish"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.obc.tv.lezaienglish"
+        minSdk 21          // 覆盖老 Android TV 机型
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // 不自签：release 也用 debug 签名，CI 产物可直接 adb install
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+// 刻意零第三方依赖：只用 Android 自带 API（HttpURLConnection + MediaPlayer + org.json）
+dependencies {
+}
